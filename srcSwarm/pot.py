@@ -6,20 +6,35 @@ import struct
 import json
 from time import time
 from ConfigParser import ConfigParser
+from ConfigParser import NoSectionError
 
-try:
+
+try: 
     c = ConfigParser()
     c.read("pot.cfg")
     username = c.get("main", "username")
-except Exception:
-    print Exception
+    key_path = c.get("PGP", "publicKey")
+
+    try:
+        key = open(key_path, "r")
+
+    except IOError as msg:
+        raise msg
+        key = open(key_path, "w")
+        key.write("")
+        key.close()
+        key = open(key_path, "r")
+
+except NoSectionError as msg:
+    raise msg
+
 
 # TODO: Crypt this
 try:
     potlist = open('00.tlst.bin', 'r+w')
 
 except IOError as msg:
-    print msg
+    raise msg
     potlist = open('00.tlst.bin', 'w')
     potlist.write("")
     potlist.flush()
@@ -31,16 +46,16 @@ class pot(object):
     # receivers: The swarms (circles) which you want
     # to share to.
     # data contains updateID, timestamp, data
-    def createPot(self, updateID=None, data=None, firstSharer=None, receivers=[]):
+    def createPot(self, potID=None, data=None, firstSharer=None, receivers=[]):
         timestamp = time()
         dataLen = str(len(data))
         receiversLen = str(len(str(receivers)))
         sharerLen = str(len(firstSharer))
-        if data <= 0: exit() # TODO: EXCEPTIONHANDLING
+        if data <= 0 or data is None: raise MemoryError("Data was not set")
         potStruct = struct.pack("!d" + receiversLen + "s" + sharerLen + "s", timestamp, data, receivers, firstSharer)
-        rawPot = {'u': username, 'd': potStruct, 'i': updateID}
+        rawPot = {'u': username, 'd': potStruct, 'i': potID}
         json.dump(rawPot, potlist)
-        fobj = open(updateID, "w")
+        fobj = open(potID, "w")
         
         potlist.flush()
         
@@ -61,10 +76,19 @@ class pot(object):
                     potlist.write(tmp.replace(oldPot, newPot))
                 potlist.flush()
 
-    def deletePot(self, updateID):
+    def deletePot(self, potID):
         d_0 = json.load(potlist) # TODO: Check this
         for item in potlist.readlines():
             if item == d_0:
                 tmp = str(potlist.read())
                 potlist.write(tmp.replace(d_0, ""))
                 potlist.flush()
+
+    def downloadPot(self, potID):
+        pass
+
+    # receivers are the amount of persons which you share with the main seeder
+    # Kai knows Matt, Matt and Kai know Mike: Kai shares data with Matt, If Kai sends
+    # the data to Mike, Matt and Kai will serve the data
+    def seedPot(self, potID, ):
+        pass
