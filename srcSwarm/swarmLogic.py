@@ -1,0 +1,1 @@
+# This class contains the logic of the friendlist (here: swarms)

@@ -5,9 +5,9 @@
  *      Author: i0nsane
  */
 
+#include </usr/include/stdio.h>
+#include </usr/include/python2.6/Python.h>
 
-#include <python2.6/Python.h>
-#include <stdio.h>
 
 ParseError = PyErr_NewException("parse.error", NULL, NULL);
 
@@ -15,7 +15,7 @@ static PyObject * commons_output( PyObject *self, PyObject *args){
 	char *out0, *out1;
 
 	if (!PyArg_ParseTuple(args, "ss", &out0, &out1)){
-		//PyErr_SetString(ParseError, "Error while parsing arguments");
+		PyErr_SetString(ParseError, "Error while parsing arguments");
 		return NULL;
 	}
 

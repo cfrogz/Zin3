@@ -5,10 +5,27 @@ import socket
 import struct
 import json
 from time import time
+from ConfigParser import ConfigParser
 
-username = "god"
+try:
+    c = ConfigParser()
+    c.read("pot.cfg")
+    username = c.get("main", "username")
+except Exception:
+    print Exception
+
 # TODO: Crypt this
-torrentlist = open('00.tlst.bin', 'r+w')
+try:
+    potlist = open('00.tlst.bin', 'r+w')
+
+except IOError as msg:
+    print msg
+    potlist = open('00.tlst.bin', 'w')
+    potlist.write("")
+    potlist.flush()
+    potlist.close()
+    potlist = open('00.tlst.bin', 'r+w')
+    print "Created file."
 
 class pot(object):
     # receivers: The swarms (circles) which you want
@@ -22,16 +39,32 @@ class pot(object):
         if data <= 0: exit() # TODO: EXCEPTIONHANDLING
         potStruct = struct.pack("!d" + receiversLen + "s" + sharerLen + "s", timestamp, data, receivers, firstSharer)
         rawPot = {'u': username, 'd': potStruct, 'i': updateID}
-        json.dump(rawPot, torrentlist)
+        json.dump(rawPot, potlist)
+        fobj = open(updateID, "w")
+        
+        potlist.flush()
         
         return rawPot
 
     def loadPot(self, pot):
-        return json.load(torrentlist)
+        return json.load(potlist)
+    
+    def changePot(self, pot={}, newPot={}):
+        oldPot = json.load(potlist)
+        for item in potlist.readlines():
+            if item == oldPot:
+                tmp = str(potlist.read())
+                if newPot is {}:
+                    raise "ERROR NEW POT IS EMPTY"
+                    break
+                else:
+                    potlist.write(tmp.replace(oldPot, newPot))
+                potlist.flush()
 
     def deletePot(self, updateID):
-        d_0 = json.load(torrentlist) # TODO: Check this
-        for item in torrentlist.readlines():
+        d_0 = json.load(potlist) # TODO: Check this
+        for item in potlist.readlines():
             if item == d_0:
-                tmp = str(torrentlist.read())
-                torrentlist.write(tmp.replace(d_0, ""))
+                tmp = str(potlist.read())
+                potlist.write(tmp.replace(d_0, ""))
+                potlist.flush()

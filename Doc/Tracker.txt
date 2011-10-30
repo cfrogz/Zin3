@@ -1,0 +1,4 @@
+Zin3 Tracker
+
+- aufnehmen von neuen Torrents über pushdienst vom client zum tracker
+- pushdienst vom tracker zu den clients mit neuen Daten
