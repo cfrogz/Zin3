@@ -20,14 +20,15 @@ class swarm(object):
             self.s.sendto(str(pot), (receiver, 4223))
         return 0
 
-    def listen(self, sock):
+    # Wait for some input pot, add it to downloadlist and start receiving
+    def beggingForPot(self, sock):
         sock.listen(5)
         sock.bind(("", 4223))
         
         sockets = select.select([sock], [], [])
         for s in sockets[0]:
             data, addr = s.recvfrom(1024) # TODO: This has to be calculated by an init packet
-            
+            # TODO: End work here..
 
 class swarmCommunication(object):
     pass
