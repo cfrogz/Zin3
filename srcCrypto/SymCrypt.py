@@ -4,7 +4,7 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 import bz2
 from uuid import uuid4
-import json
+from json import dumps, loads, dump
 
 class SymCrypt:
 
@@ -29,7 +29,7 @@ class SymCrypt:
 				AES.MODE_CBC).decrypt(ciphertext)
 		return self.removePadding(ciphertext)
 
-    def encryptCompressed(self, filename, ciphertext, passphrase):
+    def encryptCompressed(self, filename, ciphertext, passphrase, persist=True):
         ciphertext = bz2.compress(ciphertext)
         ciphertext = ciphertext.encode("hex")
         fileID = str(uuid4())
@@ -38,14 +38,14 @@ class SymCrypt:
                         's': len(ciphertext),
                         'd': ciphertext
                         }
-        return self.encryptAES(json.dumps(cipherheader), passphrase)
+        return self.encryptAES(dumps(cipherheader), passphrase)
         
-    def decryptCompressed(self, input=None, passphrase=None):
-        # first decrypt
-        res = json.loads(self.decryptAES(input, passphrase))
-        print type(res)
-        
-        # deflate cryptobla
+    def decryptCompressed(self, input=None, passphrase=None, persist=True):
+        res = loads(self.decryptAES(input, passphrase))
         res['d'] = bz2.decompress(res['d'].decode("hex"))
-        
+        if persist is True:
+            fobj = open("cmnObjectCache/%s" % (res['f']), 'wb')
+            dump(res, fobj)
+            fobj.flush()
+            fobj.close()
         return res
