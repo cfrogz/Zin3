@@ -19,49 +19,56 @@ class SymCrypt:
 		string = string[string.index(chr(42),1)+1::]
 		return string[::-1]	
 
-    def encryptAES(self, plaintext, passphrase):
-		plaintext = self.appendPadding(plaintext)
-		return AES.new( SHA256.new(passphrase).hexdigest()[:32], 
-				AES.MODE_CBC, ).encrypt(plaintext)
+    def encryptAES(self, fileID, plaintext, passphrase):
+        
+        if fileID is None:
+            fileID = uuid4()
+        
+        cipherheader = {'f': str(fileID),
+                        's': len(plaintext),
+                        'd': plaintext,
+                        'p': ""}
+        
+        while len(str(cipherheader)) % 16 != 0:
+            cipherheader['p'] += "."
+        passphrase = SHA256.new(passphrase).hexdigest()[:32]
+        return AES.new(passphrase, AES.MODE_CBC).encrypt(dumps(cipherheader)).encode("hex")
 
-    def decryptAES(self, ciphertext, passphrase):
-		ciphertext = AES.new(SHA256.new(passphrase).hexdigest()[:32],
-				AES.MODE_CBC).decrypt(ciphertext)
-		return self.removePadding(ciphertext)
 
-    def encryptCompressed(self, filename=None, ciphertext, passphrase, persist=True):
+    def encryptCompressed(self, filename, ciphertext, passphrase, persist):
         try:
             ciphertext = bz2.compress(ciphertext)
 
         except Exception as msg:
+            # just for debugging, this has to be refactored with central logging
+            # server ( remember the "help to improve"-project ) !!!
             print msg
             res = input(r"> ")
             print res
 
+        # encode the ciphertext to hex
         ciphertext = ciphertext.encode("hex")
-        
-        if filename is None:
-            fileID = str(uuid4())
-        else:
-            fileID = filename
-        
-        padding = ""
-        # Wrap our data into a headerfile in JSON format (Python Dictionary)
-        cipherheader = {'f': fileID,
-                        's': len(ciphertext),
-                        'd': ciphertext
-                        }
 
-        # the cipherheader is dumped to a string by the JSON module
-        return self.encryptAES(dumps(cipherheader), passphrase)
+        return self.encryptAES(None, ciphertext, passphrase)
         
-    def decryptCompressed(self, input=None, passphrase=None, persist=True):
-        
+    
+    def decryptAES(self, inputData=None, passphrase="AAAAAAAAAAAAAAAA", decode=False):
+        res = ""
+        if decode is True:
+            passphrase = SHA256.new(passphrase).hexdigest()[:32]
+            res = AES.new(passphrase, AES.MODE_CBC).decrypt(inputData.decode("hex"))
+        if decode is False:
+            res = AES.new(SHA256.new(passphrase).hexdigest()[:32], AES.MODE_CBC).decrypt(inputData)
+        # later loads(res)
+        return loads(res)
+
+    def decryptCompressed(self, inputData="", passphrase="AAAAAAAAAAAAAAAA", persist=True):
         # Look for data and serialize decrypted object
-        res = loads(self.decryptAES(input, passphrase))
+        res = self.decryptAES(inputData, passphrase, True)
         # Deflate data
         res['d'] = bz2.decompress(res['d'].decode("hex"))
         
+        res['p'] = ""
         # if the persist parameter was set to true (default)
         if persist is True:
             # we want to save the object on harddisk so go on:
