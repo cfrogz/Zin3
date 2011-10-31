@@ -8,17 +8,6 @@ from json import dumps, loads, dump
 
 class SymCrypt:
 
-    def appendPadding(self, s, b=16):
-		t = b*((len(s)-len(s)%b)/b+1)
-		s += '*'
-		s = s.ljust(t-1,'0') + '*'
-		return s
-
-    def removePadding(self, string):
-		string = string[::-1]
-		string = string[string.index(chr(42),1)+1::]
-		return string[::-1]	
-
     def encryptAES(self, fileID, plaintext, passphrase):
         
         if fileID is None:
